@@ -59,6 +59,9 @@ The Superstore is in a high-growth phase, with annual sales increasing from $484
 **Final Output**
 **Customer Retention & Churn Analysis**: You mentioned unique customers, but the analysis actually calculated a 73.45% retention rate for 2014–2015. You missed detailing the logic for identifying "Retained," "New," and "Churned" customers (e.g., losing 158 customers while acquiring 136).
 **Category Sales Distribution**: The analysis included a breakdown of sales across Furniture, Office Supplies, and Technology. Your methodology should mention segmenting data by category to see how the "mix" changed over the four years.
+
 **Customer Segmentation Analysis**: The report looked at Consumer, Corporate, and Home Office segments. You should include a step for analyzing sales and profit performance by customer type.
+
 **Profit Margin Distribution (Statistical Spread)**: Beyond just "ranking" products, the report analyzed the frequency of profit margins. This is a crucial step for identifying that some orders had negative margins as low as -250%, which indicates a pricing or discount issue.
+
 **Seasonal/Monthly Trend Analysis**: While you extracted months, you should explicitly mention analyzing monthly volatility to identify the Q4 peaks (months 11 and 12) and mid-year troughs.
