@@ -56,7 +56,7 @@ The Superstore is in a high-growth phase, with annual sales increasing from $484
 
   
 
-**Final Output**
+# Final Output
 **Customer Retention & Churn Analysis**: You mentioned unique customers, but the analysis actually calculated a 73.45% retention rate for 2014–2015. You missed detailing the logic for identifying "Retained," "New," and "Churned" customers (e.g., losing 158 customers while acquiring 136).
 **Category Sales Distribution**: The analysis included a breakdown of sales across Furniture, Office Supplies, and Technology. Your methodology should mention segmenting data by category to see how the "mix" changed over the four years.
 
