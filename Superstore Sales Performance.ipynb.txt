@@ -1,0 +1,271 @@
+
+from ipywidgets import Layout
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import scipy.stats as stats
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+#filter warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+#set seaborn Layout
+sns.set_theme(style="whitegrid")
+
+import matplotlib.pyplot as plt
+
+df = pd.read_excel("/content/Comined years Superstore.xlsx")
+df.head()
+
+df.dtypes
+
+df.shape
+
+import os
+import glob
+import pandas as pd
+
+def combine_excel_files(folder_path, file_pattern):
+    all_files = glob.glob(os.path.join(folder_path, file_pattern))
+    df_list = []
+    for f in all_files:
+        df_list.append(pd.read_excel(f))
+    combined_df = pd.concat(df_list, ignore_index=True)
+    return combined_df
+
+# This finds ALL Excel files in the current directory
+# Doesn't matter if you uploaded them separately or together
+df = combine_excel_files(folder_path='/content/', file_pattern='*.xlsx')
+
+df.info()
+
+sns.set_style("whitegrid")
+plt.rcParams['figure.figsize'] = (14, 6)
+
+df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d-%b-%y', errors='coerce')
+df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d-%b-%y', errors='coerce')
+
+df['Year'] = df['Order Date'].dt.year
+df['Month'] = df['Order Date'].dt.month
+df['Month_Name'] = df['Order Date'].dt.strftime('%B')
+df['Quarter'] = df['Order Date'].dt.quarter
+df['Day_name'] = df['Order Date'].dt.day_name()
+df.head(5)
+
+df['Delivery_Days'] = (df['Ship Date'] - df['Order Date']).dt.days
+
+print(f"\n📅 Years in dataset: {sorted(df['Year'].unique())}")
+print(f"📊 Date range: {df['Order Date'].min()} to {df['Order Date'].max()}")
+
+df['Year'] = pd.to_datetime(df['Order Date']).dt.year.astype('Int64')
+
+print("\n" + "="*70)
+print("YEAR-OVER-YEAR SUMMARY")
+print("="*70)
+
+yearly_summary = df.groupby('Year').agg({
+    'Sales': 'sum',
+    'Profit': 'sum',
+    'Quantity': 'sum',
+    'Order ID': 'nunique',
+    'Customer ID': 'nunique',
+    'Product ID': 'nunique'
+}).round(2)
+yearly_summary.columns = ['Total Sales', 'Total Profit', 'Total Quantity',
+                          'Total Orders', 'Unique Customers', 'Unique Products']
+
+print("\n", yearly_summary)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+yearly_summary['Total Sales'].plot(kind='bar', ax=axes[0], color='steelblue')
+axes[0].set_title('Total Sales by Year', fontsize=10, fontweight='bold')
+axes[0].set_ylabel('Sales ($)')
+axes[0].set_xlabel('Year')
+axes[0].tick_params(axis='x', rotation=0)
+
+yearly_summary['Total Profit'].plot(kind='bar', ax=axes[1], color='green')
+axes[1].set_title('Total Profit by Year', fontsize=10, fontweight='bold')
+axes[1].set_ylabel('Profit ($)')
+axes[1].set_xlabel('Year')
+axes[1].tick_params(axis='x', rotation=0)
+
+plt.tight_layout()
+plt.show()
+
+product_counts = df['Product Name'].value_counts().reset_index()
+product_counts.columns = ['Product Name', 'counts']
+sns.barplot(x='counts', y='Product Name', data=product_counts.head(10), palette= 'viridis')   # sns.barplot
+plt.title('Top 10 Product')
+plt.show()
+
+sns.barplot(x='counts', y='Product Name', data=product_counts.tail(10), palette= 'viridis_r')   # sns.barplot
+plt.title('Bottom 10 Product')
+plt.show()
+
+if len(yearly_summary) >= 2:
+    years = sorted(df['Year'].dropna().unique()) # Drop NaN values before sorting
+    year1, year2 = years[0], years[1]
+
+    print(f"\n📈 YEAR-OVER-YEAR GROWTH ({year1} → {year2}):")
+    print("-" * 70)
+
+    for col in yearly_summary.columns:
+        val1 = yearly_summary.loc[year1, col]
+        val2 = yearly_summary.loc[year2, col]
+        growth = ((val2 - val1) / val1) * 100
+        symbol = "📈" if growth > 0 else "📉"
+        print(f"{symbol} {col}: {growth:+.2f}% (${val1:,.2f} → ${val2:,.2f})")
+
+print("\n" + "="*70)
+print("PROFITABILITY ANALYSIS")
+print("="*70)
+
+# Convert 'Profit', 'Sales', and 'Discount' columns to numeric types
+df['Profit'] = pd.to_numeric(df['Profit'], errors='coerce')
+df['Sales'] = pd.to_numeric(df['Sales'], errors='coerce')
+df['Discount'] = pd.to_numeric(df['Discount'], errors='coerce')
+
+df['Profit_Margin'] = (df['Profit'] / df['Sales'] * 100).round(2)
+
+profit_by_year = df.groupby('Year').agg({
+    'Profit_Margin': 'mean',
+    'Discount': 'mean'
+}).round(2)
+
+print("\n", profit_by_year)
+
+print("\n" + "="*70)
+print("CATEGORY PERFORMANCE BY YEAR")
+print("="*70)
+
+category_performance = df.groupby(['Year', 'Category']).agg({
+    'Sales': 'sum',
+    'Profit': 'sum',
+    'Quantity': 'sum'
+}).round(2)
+
+print("\n", category_performance)
+
+years = sorted(df['Year'].dropna().unique())
+fig, axes = plt.subplots(1, len(years), figsize=(10, 6))
+
+if len(years) == 1:
+    axes = [axes]
+
+for idx, year in enumerate(years):
+    year_data = df[df['Year'] == year]
+    category_sales = year_data.groupby('Category')['Sales'].sum()
+
+    colors = plt.cm.Set3(range(len(category_sales)))
+
+    axes[idx].pie(category_sales, labels=category_sales.index, autopct='%1.1f%%',
+                  startangle=90, colors=colors, textprops={'fontsize': 10})
+    axes[idx].set_title(f'{year} - Category Sales Distribution',
+                        fontsize=10, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+
+print("\n" + "="*70)
+print("CUSTOMER RETENTION ANALYSIS")
+print("="*70)
+
+if len(yearly_summary) >= 2:
+    year1_customers = set(df[df['Year'] == year1]['Customer ID'].unique())
+    year2_customers = set(df[df['Year'] == year2]['Customer ID'].unique())
+
+    retained_customers = year1_customers.intersection(year2_customers)
+    new_customers = year2_customers - year1_customers
+    churned_customers = year1_customers - year2_customers
+
+    retention_rate = (len(retained_customers) / len(year1_customers)) * 100
+
+    print(f"\n👥 {year1} Customers: {len(year1_customers):,}")
+    print(f"👥 {year2} Customers: {len(year2_customers):,}")
+    print(f"✅ Retained Customers: {len(retained_customers):,}")
+    print(f"🆕 New Customers: {len(new_customers):,}")
+    print(f"❌ Churned Customers: {len(churned_customers):,}")
+    print(f"📊 Retention Rate: {retention_rate:.2f}%")
+
+print("\n" + "="*70)
+print("TOP 5 REGIONS BY SALES (EACH YEAR)")
+print("="*70)
+
+for year in sorted(df['Year'].dropna().unique()):
+    year_data = df[df['Year'] == year]
+    top_regions = year_data.groupby('Region')['Sales'].sum().sort_values(ascending=False).head(5)
+    print(f"\n📍 {year}:")
+    print(top_regions.round(2))
+
+print("\n" + "="*70)
+print("PRODUCT ANALYSIS")
+print("="*70)
+
+if len(yearly_summary) >= 2:
+    year1_products = set(df[df['Year'] == year1]['Product ID'].unique())
+    year2_products = set(df[df['Year'] == year2]['Product ID'].unique())
+
+    new_products = year2_products - year1_products
+    discontinued_products = year1_products - year2_products
+    continuing_products = year1_products.intersection(year2_products)
+
+    print(f"\n📦 Products in {year1}: {len(year1_products):,}")
+    print(f"📦 Products in {year2}: {len(year2_products):,}")
+    print(f"🆕 New Products: {len(new_products):,}")
+    print(f"❌ Discontinued Products: {len(discontinued_products):,}")
+    print(f"✅ Continuing Products: {len(continuing_products):,}")
+
+fig, ax = plt.subplots(figsize=(10, 6))
+category_pivot = df.groupby(['Year', 'Category'])['Sales'].sum().unstack()
+category_pivot.plot(kind='bar', ax=ax, width=0.8)
+ax.set_title('Sales by Category and Year', fontsize=10, fontweight='bold')
+ax.set_ylabel('Sales ($)')
+ax.set_xlabel('Year')
+ax.legend(title='Category')
+ax.tick_params(axis='x', rotation=0)
+plt.tight_layout()
+plt.show()
+
+fig, ax = plt.subplots(figsize=(10, 6))
+monthly_sales = df.groupby(['Year', 'Month'])['Sales'].sum().unstack(level=0)
+monthly_sales.plot(ax=ax, marker='o', linewidth=2)
+ax.set_title('Monthly Sales Trends Comparison', fontsize=10, fontweight='bold')
+ax.set_ylabel('Sales ($)')
+ax.set_xlabel('Month')
+ax.legend(title='Year')
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+fig, ax = plt.subplots(figsize=(10, 6))
+segment_pivot = df.groupby(['Year', 'Segment'])['Sales'].sum().unstack()
+segment_pivot.plot(kind='bar', ax=ax, width=0.8)
+ax.set_title('Sales by Customer Segment and Year', fontsize=12, fontweight='bold')
+ax.set_ylabel('Sales ($)')
+ax.set_xlabel('Year')
+ax.legend(title='Segment')
+ax.tick_params(axis='x', rotation=0)
+plt.tight_layout()
+plt.show()
+
+fig, ax = plt.subplots(figsize=(10, 6))
+for year in sorted(df['Year'].dropna().unique()):
+    year_data = df[df['Year'] == year]['Profit_Margin']
+    ax.hist(year_data, bins=50, alpha=0.6, label=f'{year}')
+ax.set_title('Profit Margin Distribution by Year', fontsize=12, fontweight='bold')
+ax.set_xlabel('Profit Margin (%)')
+ax.set_ylabel('Frequency')
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print("\n" + "="*70)
+print("EXPORTING SUMMARY REPORT...")
+print("="*70)
+
